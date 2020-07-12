@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     for fold_, (_,_) in enumerate(kf.split(X=df, y=y)):
         df.loc[:, "kfold"] = fold_
-    df.to_csv(os.path.join(data, "train_folds.csv"), index=False)
+    df.to_csv(os.path.join('data/', "train_folds.csv"), index=False)
 
     
 

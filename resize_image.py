@@ -1,3 +1,7 @@
+"""
+Resize image using parallel computation
+"""
+
 import os
 import glob
 from tqdm import tqdm
