@@ -20,7 +20,7 @@ def resize_image(image_path, output_folder, resize):
 
 
 if __name__ == "__main__":
-    input_folder = "data/input/"
+    input_folder = input("Enter the input data folder path: ")
     output_folder = "data/output/"
 
     images = glob.glob(os.path.join(input_folder, "*.jpg"))
