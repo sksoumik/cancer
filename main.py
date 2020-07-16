@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+import torch
 import torch.nn as nn
 import pretrainedmodels
 from torch.nn import functional as F
@@ -64,12 +65,30 @@ def run(fold):
     ]
     train_targets = df_train.target.values
 
-
     valid_images = df_train.image_name.values.tolist()
     valid_images = [
         os.path.join(training_data_path, i + ".jpg") for i in valid_images
     ]
-    train_targets = df_valid.target.values
+    valid_targets = df_valid.target.values
 
+    # create train loader
+    train_dataset = ClassificationLoader(image_paths=train_images,
+                                         targets=train_targets,
+                                         resize=None,
+                                         augmentations=train_aug)
+    # train loader
+    train_loader = torch.utils.data.DataLoader(train_dataset,
+                                               batch_size=train_batch_size,
+                                               shuffle=True,
+                                               num_workers=4)
 
-
+    # create valid dataset
+    valid_dataset = ClassificationLoader(image_paths=valid_images,
+                                         targets=valid_targets,
+                                         resize=None,
+                                         augmentations=valid_aug)
+    # validation data loader
+    valid_loader = torch.utils.data.DataLoader(valid_dataset,
+                                               batch_size=valid_batch_size,
+                                               shuffle=False,
+                                               num_workers=4)
