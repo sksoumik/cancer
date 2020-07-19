@@ -29,7 +29,7 @@ class SEResNext(nn.Module):
         x = x.reshape(batch_size, -1)
         out = self.out(x)
         loss = nn.BCEWithLogitsLoss()(out, targets.reshape(-1, 1).type_as(out))
-        return out
+        return out, loss 
 
 
 def train(fold):
