@@ -9,6 +9,8 @@ from torch.nn import functional as F
 import albumentations
 from wtfml.data_loaders.image import ClassificationLoader
 
+from apex import amp
+
 
 # model
 class SEResNext(nn.Module):
@@ -92,3 +94,20 @@ def run(fold):
                                                batch_size=valid_batch_size,
                                                shuffle=False,
                                                num_workers=4)
+
+    # import model
+    model = SEResNext(pretrained='imagenet')
+    model.to(device)
+    #
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    # dynamic learning rate reducing based on validation measurements.
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        # https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+        optimizer,
+        patience=4,
+        mode='max',
+    )
+    model, optimizer = amp.initialize(model,
+                                      optimizer,
+                                      opt_level='01',
+                                      verbosity=0)
