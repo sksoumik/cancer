@@ -2,14 +2,16 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+from sklearn import metrics
 import torch
 import torch.nn as nn
 import pretrainedmodels
 from torch.nn import functional as F
 import albumentations
 from wtfml.data_loaders.image import ClassificationLoader
-
 from apex import amp
+from wtfml.utils import EarlyStopping
+from wtfml.engine import Engine
 
 
 # model
@@ -20,21 +22,23 @@ class SEResNext(nn.Module):
             pretrained=pretrained)
         self.out = nn.Linear(2048, 1)
 
-    def forward(self, image):
+    def forward(self, image, targets):
         batch_size, _, _, _ = image.shape
         x = self.model.features(image)
         x = F.adaptive_avg_pool2d(x, 1)
         x = x.reshape(batch_size, -1)
         out = self.out(x)
+        loss = nn.BCEWithLogitsLoss()(out, targets.reshape(-1, 1).type_as(out))
         return out
 
 
-def run(fold):
+def train(fold):
     # train image path
     training_data_path = input("Enter the training path: ")
     # csv data path that was created from folds
     fold_csv_path = input("Enter the train_fold.csv file path: ")
     df = pd.read_csv(fold_csv_path)
+    model_path = "model/"
     device = "cuda"
     epochs = 30
     train_batch_size = 32
@@ -107,7 +111,34 @@ def run(fold):
         patience=4,
         mode='max',
     )
+    # use apex for mixed precision training
+    # amp: Automatic Mixed Precision
     model, optimizer = amp.initialize(model,
                                       optimizer,
                                       opt_level='01',
                                       verbosity=0)
+    # earlystopping
+    es = EarlyStopping(patience=5, mode='max')
+    # train the train data
+    # use thr wtfml module for calculating loss and evaluation
+    for epoch in range(epochs):
+        training_loss = Engine.train(train_loader,
+                                     model,
+                                     optimizer,
+                                     device,
+                                     fp16=True)
+        predictions, valid_loss = Engine.evaluate(train_loader, model,
+                                                  optimizer, device)
+        predictions = np.vstack((predictions).ravel())
+        auc = metrics.roc_auc_score(valid_targets, predictions)
+        scheduler.step(auc)
+        print(f"epoch = {epoch}, auc= {auc}")
+        es(auc, model, model_path)
+
+        if es.early_stop:
+            print("Early Stopping")
+            break
+
+
+if __name__ == "__main__":
+    train(fold=0)

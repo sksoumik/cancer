@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 apex/
 data/
+model/
 # C extensions
 *.so
 
