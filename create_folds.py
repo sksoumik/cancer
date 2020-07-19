@@ -3,7 +3,7 @@ from sklearn import model_selection
 import os
 
 if __name__ == "__main__":
-    FILE_PATH = ""  # TODO: Give file path here
+    FILE_PATH = input("Enter the file path: ")
     df = pd.read_csv(os.path.join(FILE_PATH, "train.csv"))
     df['kfold'] = -1
     df = df.sample(frac=1).reset_index(drop=True)
