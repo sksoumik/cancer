@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 apex/
+.vscode/
 data/
 model/
 # C extensions
