@@ -196,3 +196,4 @@ def predict(fold):
 
 if __name__ == "__main__":
     train(fold=0)
+    predict(fold=0)
