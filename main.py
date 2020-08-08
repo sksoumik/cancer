@@ -34,7 +34,7 @@ class SEResNext(nn.Module):
 
 def train(fold):
     # train image path
-    training_data_path = input("Enter the training path: ")
+    training_data_path = input("Enter the train data path (resized image): ")
     # csv data path that was created from folds
     fold_csv_path = input("Enter the train_fold.csv file path: ")
     df = pd.read_csv(fold_csv_path)
@@ -133,11 +133,65 @@ def train(fold):
         auc = metrics.roc_auc_score(valid_targets, predictions)
         scheduler.step(auc)
         print(f"epoch = {epoch}, auc= {auc}")
-        es(auc, model, model_path)
+        es(auc, model, os.path.join(model_path, f"model{fold}.bin"))
 
         if es.early_stop:
             print("Early Stopping")
             break
+
+
+def predict(fold):
+    # train image path
+    test_data_path = input("Enter the test data path (resized image): ")
+    # csv data path that was created from folds
+    test_csv_path = input("Enter the test.csv file path: ")
+    df_test = pd.read_csv(test_csv_path)
+    df_test.loc[:, "target"] = 0
+    model_path = "model/"
+    device = "cuda"
+    epochs = 30
+    test_batch_size = 16
+    mean = (0.485, 0.456, 0.225)
+    standard_deviation = (0.229, 0.224, 0.225)
+
+
+    test_aug = albumentations.Compose([
+        albumentations.Normalize(mean,
+                                 std=standard_deviation,
+                                 max_pixel_value=255.0,
+                                 always_apply=True)
+    ])
+
+       # train image mapping
+    test_images = df_test.image_name.values.tolist()
+    test_images = [
+        os.path.join(test_data_path, i + ".jpg") for i in test_images
+    ]
+    test_targets = df_test.target.values
+
+    # create valid dataset
+    test_dataset = ClassificationLoader(image_paths=test_images,
+                                         targets=test_targets,
+                                         resize=None,
+                                         augmentations=test_aug)
+    # validation data loader
+    test_loader = torch.utils.data.DataLoader(test_dataset,
+                                               batch_size=test_batch_size,
+                                               shuffle=False,
+                                               num_workers=4)
+
+    # import model
+    model = SEResNext(pretrained='imagenet')
+    model.load_state_dict(torch.load(os.path.join(model_path, f"model{fold}.bin")))
+
+    model.to(device)
+    #
+    predictions = Engine.predict(
+        test_loader,
+        model,
+        device
+    )
+    return np.vstack((predictions)).ravel()
 
 
 if __name__ == "__main__":
