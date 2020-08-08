@@ -6,6 +6,7 @@ apex/
 .vscode/
 data/
 model/
+uploads/
 # C extensions
 *.so
 
