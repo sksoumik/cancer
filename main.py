@@ -29,7 +29,7 @@ class SEResNext(nn.Module):
         x = x.reshape(batch_size, -1)
         out = self.out(x)
         loss = nn.BCEWithLogitsLoss()(out, targets.reshape(-1, 1).type_as(out))
-        return out, loss 
+        return out, loss
 
 
 def train(fold):
@@ -154,7 +154,6 @@ def predict(fold):
     mean = (0.485, 0.456, 0.225)
     standard_deviation = (0.229, 0.224, 0.225)
 
-
     test_aug = albumentations.Compose([
         albumentations.Normalize(mean,
                                  std=standard_deviation,
@@ -162,7 +161,7 @@ def predict(fold):
                                  always_apply=True)
     ])
 
-       # train image mapping
+    # train image mapping
     test_images = df_test.image_name.values.tolist()
     test_images = [
         os.path.join(test_data_path, i + ".jpg") for i in test_images
@@ -171,26 +170,23 @@ def predict(fold):
 
     # create valid dataset
     test_dataset = ClassificationLoader(image_paths=test_images,
-                                         targets=test_targets,
-                                         resize=None,
-                                         augmentations=test_aug)
+                                        targets=test_targets,
+                                        resize=None,
+                                        augmentations=test_aug)
     # validation data loader
     test_loader = torch.utils.data.DataLoader(test_dataset,
-                                               batch_size=test_batch_size,
-                                               shuffle=False,
-                                               num_workers=4)
+                                              batch_size=test_batch_size,
+                                              shuffle=False,
+                                              num_workers=4)
 
     # import model
     model = SEResNext(pretrained='imagenet')
-    model.load_state_dict(torch.load(os.path.join(model_path, f"model{fold}.bin")))
+    model.load_state_dict(
+        torch.load(os.path.join(model_path, f"model{fold}.bin")))
 
     model.to(device)
     #
-    predictions = Engine.predict(
-        test_loader,
-        model,
-        device
-    )
+    predictions = Engine.predict(test_loader, model, device)
     return np.vstack((predictions)).ravel()
 
 
